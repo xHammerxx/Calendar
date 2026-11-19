@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Планировщик отпуска 2027</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap">
+<style>
+/* Layout: 12 месяцев сеткой слева, справа липкая панель «Мой отпуск»; на телефоне панель сверху + нижняя плашка со счётчиком */
+:root {
+  --bg: #f4f7f5;
+  --surface: #ffffff;
+  --fg: #17211c;
+  --muted: #5e6c65;
+  --line: #dce5e0;
+  --off-bg: #dcf1e2;
+  --off-fg: #1e6b3c;
+  --hol-bg: #2e9d5a;
+  --hol-fg: #ffffff;
+  --short-bg: #f2faf4;
+  --short-line: #74c592;
+  --vac-bg: #3a8ee6;
+  --vac-fg: #ffffff;
+  --vac-soft: #e2effc;
+  --vac-ink: #1d5fa8;
+  --danger: #c2412d;
+  --danger-soft: #fbe9e5;
+  --ok: #2e7d4f;
+  --font-display: "Unbounded", "Golos Text", system-ui, sans-serif;
+  --font-body: "Golos Text", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --radius: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1412; --surface: #151d1a; --fg: #e4ebe7; --muted: #94a39c; --line: #26322d;
+    --off-bg: #183a26; --off-fg: #93dcad; --hol-bg: #2b8f53; --hol-fg: #ffffff;
+    --short-bg: #12251a; --short-line: #3f9a63;
+    --vac-bg: #3d8fe3; --vac-fg: #ffffff; --vac-soft: #16283d; --vac-ink: #8cc0f5;
+    --danger: #f07a66; --danger-soft: #3a1c17; --ok: #7fd3a0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1412; --surface: #151d1a; --fg: #e4ebe7; --muted: #94a39c; --line: #26322d;
+  --off-bg: #183a26; --off-fg: #93dcad; --hol-bg: #2b8f53; --hol-fg: #ffffff;
+  --short-bg: #12251a; --short-line: #3f9a63;
+  --vac-bg: #3d8fe3; --vac-fg: #ffffff; --vac-soft: #16283d; --vac-ink: #8cc0f5;
+  --danger: #f07a66; --danger-soft: #3a1c17; --ok: #7fd3a0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap {
+  max-width: 1320px;
+  margin: 0 auto;
+  padding-block: 28px 96px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; margin-bottom: 22px; }
+.kicker { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4vw, 40px); line-height: 1.05; margin: 6px 0 0; text-wrap: balance; letter-spacing: -.01em; }
+h1 .yr { color: var(--hol-bg); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.sw { width: 18px; height: 18px; border-radius: 5px; display: inline-block; flex: none; position: relative; }
+.sw.hol { background: var(--hol-bg); }
+.sw.off { background: var(--off-bg); }
+.sw.short { background: var(--short-bg); box-shadow: inset 0 0 0 1.5px var(--short-line); }
+.sw.vac { background: var(--vac-bg); }
+.sw.vachol { background: var(--vac-bg); box-shadow: inset 0 0 0 3px var(--hol-bg); }
+
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
+.months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.month { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 14px 12px; min-width: 0; }
+.month-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 8px; min-height: 24px; }
+.month-name { font-family: var(--font-display); font-weight: 500; font-size: 15px; }
+.month-vac { font-size: 12px; font-weight: 600; color: var(--vac-ink); background: var(--vac-soft); padding: 2px 8px; border-radius: 999px; font-variant-numeric: tabular-nums; }
+.grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.wd { font-size: 11px; text-align: center; color: var(--muted); padding-bottom: 2px; text-transform: lowercase; }
+.wd.we { color: var(--off-fg); font-weight: 600; }
+.day {
+  appearance: none; border: 0; margin: 0; padding: 0;
+  aspect-ratio: 1 / 1; min-height: 30px; width: 100%;
+  border-radius: 8px; background: transparent; color: var(--fg);
+  font: inherit; font-size: 14px; font-variant-numeric: tabular-nums;
+  cursor: pointer; position: relative;
+  transition: background-color .12s ease, color .12s ease, transform .08s ease;
+  user-select: none; -webkit-tap-highlight-color: transparent;
+}
+.day:hover { outline: 2px solid var(--vac-bg); outline-offset: -2px; }
+.day:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.day:active { transform: scale(.94); }
+.day.off { background: var(--off-bg); color: var(--off-fg); }
+.day.hol { background: var(--hol-bg); color: var(--hol-fg); font-weight: 600; }
+.day.short { background: var(--short-bg); color: var(--off-fg); box-shadow: inset 0 0 0 1.5px var(--short-line); }
+.day.short::after { content: "*"; position: absolute; top: 1px; right: 4px; font-size: 11px; line-height: 1; }
+.day.vac { background: var(--vac-bg); color: var(--vac-fg); box-shadow: none; font-weight: 600; }
+.day.vac.hol { box-shadow: inset 0 0 0 3px var(--hol-bg); }
+.day.anchor { outline: 2px dashed var(--vac-bg); outline-offset: 1px; }
+.month-foot { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.month-foot b { color: var(--fg); font-weight: 600; }
+
+aside.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); display: flex; flex-direction: column; gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+.card h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+.total { display: flex; align-items: baseline; gap: 10px; }
+.total .num { font-family: var(--font-display); font-weight: 700; font-size: 54px; line-height: 1; color: var(--vac-ink); font-variant-numeric: tabular-nums; }
+.total .unit { color: var(--muted); font-size: 14px; }
+.stats { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; margin-top: 14px; font-size: 14px; font-variant-numeric: tabular-nums; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; text-align: right; font-weight: 600; }
+.limit-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.limit-row label { color: var(--muted); font-size: 14px; }
+.limit-row input { width: 76px; font: inherit; font-weight: 600; text-align: right; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-variant-numeric: tabular-nums; }
+.limit-row input:focus-visible { outline: 2px solid var(--vac-bg); outline-offset: 1px; }
+.bar { height: 8px; border-radius: 99px; background: var(--vac-soft); margin-top: 12px; overflow: hidden; }
+.bar i { display: block; height: 100%; width: 0; background: var(--vac-bg); border-radius: 99px; transition: width .2s ease; }
+.bar.over i { background: var(--danger); }
+.note { font-size: 13px; margin-top: 10px; padding: 8px 10px; border-radius: 8px; line-height: 1.4; }
+.note.warn { background: var(--danger-soft); color: var(--danger); }
+.note.ok { background: var(--off-bg); color: var(--off-fg); }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; }
+button.btn { font: inherit; font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--fg); cursor: pointer; }
+button.btn:hover { border-color: var(--vac-bg); }
+button.btn:focus-visible { outline: 2px solid var(--vac-bg); outline-offset: 1px; }
+button.btn.primary { background: var(--vac-bg); border-color: var(--vac-bg); color: var(--vac-fg); }
+button.btn.on { background: var(--vac-soft); border-color: var(--vac-bg); color: var(--vac-ink); }
+button.btn.danger { color: var(--danger); }
+.hint { font-size: 12.5px; color: var(--muted); margin: 10px 0 0; }
+kbd { font: inherit; font-size: 11.5px; padding: 1px 5px; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--bg); }
+.periods { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.periods li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; background: var(--vac-soft); }
+.p-dates { font-weight: 600; font-size: 14px; }
+.p-sub { font-size: 12px; color: var(--muted); }
+.p-days { font-weight: 700; color: var(--vac-ink); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.p-del { appearance: none; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; padding: 2px 4px; border-radius: 6px; }
+.p-del:hover { color: var(--danger); }
+.p-del:focus-visible { outline: 2px solid var(--vac-bg); }
+.empty { font-size: 13.5px; color: var(--muted); padding: 10px; border: 1px dashed var(--line); border-radius: 9px; }
+.dayinfo { font-size: 13px; color: var(--muted); min-height: 38px; }
+.dayinfo b { color: var(--fg); }
+textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inherit; font-size: 12.5px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
+.toast { font-size: 12.5px; color: var(--ok); margin-top: 8px; min-height: 1em; }
+
+section.norms { margin-top: 28px; }
+section.norms h2 { font-family: var(--font-display); font-weight: 500; font-size: 18px; margin: 0 0 12px; }
+.table-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+thead th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+tr.q td { background: var(--bg); font-weight: 600; }
+tr.y td { font-weight: 700; border-bottom: 0; }
+.src { font-size: 12.5px; color: var(--muted); margin-top: 12px; max-width: 80ch; }
+
+.mobilebar { display: none; }
+
+@media (max-width: 1100px) { .months { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 860px) {
+  .layout { grid-template-columns: minmax(0, 1fr); }
+  aside.panel { position: static; order: -1; }
+  .mobilebar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    justify-content: space-between; align-items: center; gap: 12px;
+    padding-top: 10px; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--surface); border-top: 1px solid var(--line); font-size: 14px;
+  }
+  .mobilebar b { font-family: var(--font-display); color: var(--vac-ink); font-size: 18px; }
+}
+@media (max-width: 560px) {
+  .months { grid-template-columns: minmax(0, 1fr); }
+  .day { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .day, .bar i { transition: none; } .day:active { transform: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="kicker">Производственный календарь · пятидневная неделя</div>
+      <h1>Отпуск <span class="yr">2027</span></h1>
+    </div>
+    <div class="legend" aria-label="Обозначения">
+      <span><i class="sw hol"></i>Нерабочий праздник</span>
+      <span><i class="sw off"></i>Выходной</span>
+      <span><i class="sw short"></i>Предпраздничный (−1 ч)</span>
+      <span><i class="sw vac"></i>Отпуск</span>
+      <span><i class="sw vachol"></i>Праздник в отпуске (не учитывается)</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <main>
+      <div class="months" id="months"></div>
+
+      <section class="norms" aria-labelledby="normsTitle">
+        <h2 id="normsTitle">Нормы рабочего времени 2027</h2>
+        <div class="table-scroll">
+          <table id="normsTable">
+            <thead><tr><th>Период</th><th>Календ. дней</th><th>Рабочих</th><th>Вых. и праздн.</th><th>40 ч/нед</th><th>36 ч/нед</th><th>24 ч/нед</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="src">Праздники — ст. 112 ТК РФ. Переносы — Постановление Правительства РФ от 17.09.2026 № 1187 «О переносе выходных дней в 2027 году»: с 2 января на 5 ноября, с 3 января на 31 декабря, с 20 февраля на 22 февраля. Выходные, совпавшие с праздниками 1 мая, 9 мая и 12 июня, перенесены на 3 мая, 10 мая и 14 июня по ч. 2 ст. 112 ТК РФ. Итоги сверены с КонсультантПлюс и xmlcalendar.ru: 247 рабочих дней, 118 выходных и праздничных, 1972 ч при 40-часовой неделе. Подсчёт отпуска — по ст. 120 ТК РФ: нерабочие праздничные дни в число календарных дней отпуска не включаются.</p>
+      </section>
+    </main>
+
+    <aside class="panel" aria-label="Мой отпуск">
+      <div class="card">
+        <h2>Запланировано</h2>
+        <div class="total"><span class="num" id="totalNum">0</span><span class="unit" id="totalUnit">календарных дней отпуска</span></div>
+        <dl class="stats">
+          <dt>Отмечено дней в календаре</dt><dd id="stSelected">0</dd>
+          <dt>Праздники внутри отпуска</dt><dd id="stHol">0</dd>
+          <dt>Из них рабочих дней</dt><dd id="stWork">0</dd>
+          <dt>Частей отпуска</dt><dd id="stParts">0</dd>
+        </dl>
+      </div>
+
+      <div class="card">
+        <div class="limit-row">
+          <label for="limit">Положено дней в году</label>
+          <input id="limit" type="number" min="0" max="365" step="1" value="28" inputmode="numeric">
+        </div>
+        <div class="bar" id="bar"><i></i></div>
+        <div class="stats" style="margin-top:10px">
+          <span style="color:var(--muted)" id="remainLabel">Осталось распределить</span><b id="remain" style="text-align:right">28</b>
+        </div>
+        <div id="rule125"></div>
+      </div>
+
+      <div class="card">
+        <h2>Части отпуска</h2>
+        <ul class="periods" id="periods"></ul>
+        <div class="btns" style="margin-top:12px">
+          <button class="btn" id="rangeBtn" type="button" aria-pressed="false">Выбрать диапазон</button>
+          <button class="btn primary" id="copyBtn" type="button">Скопировать план</button>
+          <button class="btn danger" id="clearBtn" type="button">Очистить</button>
+        </div>
+        <p class="hint">Клик по дню добавляет его в отпуск, повторный клик убирает. <kbd>Shift</kbd> + клик отмечает все дни от предыдущего нажатого. На телефоне включите «Выбрать диапазон» и нажмите первый и последний день.</p>
+        <div class="toast" id="toast" role="status" aria-live="polite"></div>
+        <textarea class="copybox" id="copyBox" readonly hidden aria-label="Текст плана отпуска"></textarea>
+      </div>
+
+      <div class="card">
+        <h2>День</h2>
+        <div class="dayinfo" id="dayInfo">Наведите на день, чтобы увидеть его статус.</div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<div class="mobilebar" aria-hidden="true">
+  <span>Отпуск: <b id="mbNum">0</b> дн.</span>
+  <span id="mbRemain">осталось 28</span>
+</div>
+
+<script id="calc">
+// ===== Данные производственного календаря 2027 (Россия, пятидневка) =====
+const YEAR = 2027;
+const MONTHS = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+const MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+const WEEKDAYS = ["Понедельник","Вторник","Среда","Четверг","Пятница","Суббота","Воскресенье"];
+const WD_SHORT = ["пн","вт","ср","чт","пт","сб","вс"];
+
+// Нерабочие праздничные дни (ст. 112 ТК РФ)
+const HOLIDAYS = {
+  "01-01": "Новогодние каникулы", "01-02": "Новогодние каникулы", "01-03": "Новогодние каникулы",
+  "01-04": "Новогодние каникулы", "01-05": "Новогодние каникулы", "01-06": "Новогодние каникулы",
+  "01-07": "Рождество Христово", "01-08": "Новогодние каникулы",
+  "02-23": "День защитника Отечества",
+  "03-08": "Международный женский день",
+  "05-01": "Праздник Весны и Труда",
+  "05-09": "День Победы",
+  "06-12": "День России",
+  "11-04": "День народного единства"
+};
+// Выходные дни, перенесённые на будни
+const MOVED_OFF = {
+  "02-22": "перенос выходного с субботы 20 февраля",
+  "05-03": "перенос выходного с субботы 1 мая",
+  "05-10": "перенос выходного с воскресенья 9 мая",
+  "06-14": "перенос выходного с субботы 12 июня",
+  "11-05": "перенос выходного с субботы 2 января",
+  "12-31": "перенос выходного с воскресенья 3 января"
+};
+// Рабочие субботы/воскресенья
+const WORKING_WEEKEND = { "02-20": "рабочая суббота (выходной перенесён на 22 февраля)" };
+// Предпраздничные дни, сокращённые на 1 час (ст. 95 ТК РФ)
+const SHORT = { "02-20": true, "04-30": true, "06-11": true, "11-03": true };
+
+const pad = n => String(n).padStart(2, "0");
+const keyOf = (m, d) => pad(m + 1) + "-" + pad(d);
+const daysInMonth = m => new Date(YEAR, m + 1, 0).getDate();
+const dowOf = (m, d) => (new Date(YEAR, m, d).getDay() + 6) % 7; // 0 = пн
+
+function dayInfo(m, d) {
+  const key = keyOf(m, d), dow = dowOf(m, d);
+  let type, note = "";
+  if (HOLIDAYS[key]) { type = "hol"; note = HOLIDAYS[key]; }
+  else if (MOVED_OFF[key]) { type = "off"; note = MOVED_OFF[key]; }
+  else if (WORKING_WEEKEND[key]) { type = SHORT[key] ? "short" : "work"; note = WORKING_WEEKEND[key]; }
+  else if (dow >= 5) { type = "off"; }
+  else if (SHORT[key]) { type = "short"; }
+  else { type = "work"; }
+  return { key, m, d, dow, type, note, isWork: type === "work" || type === "short", isHoliday: type === "hol", isShort: !!SHORT[key] };
+}
+
+// Все дни года по порядку
+const ALL = [];
+for (let m = 0; m < 12; m++) for (let d = 1; d <= daysInMonth(m); d++) ALL.push(dayInfo(m, d));
+const INDEX = Object.fromEntries(ALL.map((x, i) => [x.key, i]));
+
+const r1 = x => Math.round(x * 10) / 10;
+function norms(days) {
+  const work = days.filter(x => x.isWork).length;
+  const short = days.filter(x => x.isWork && x.isShort).length;
+  return { cal: days.length, work, off: days.length - work, h40: r1(work * 8 - short), h36: r1(work * 7.2 - short), h24: r1(work * 4.8 - short) };
+}
+const monthDays = m => ALL.filter(x => x.m === m);
+
+// Разбивка выбранных дней на непрерывные периоды
+function periodsOf(selected) {
+  const out = []; let cur = null;
+  ALL.forEach((x, i) => {
+    if (selected.has(x.key)) {
+      if (cur && cur.endIdx === i - 1) { cur.endIdx = i; cur.days.push(x); }
+      else { cur = { startIdx: i, endIdx: i, days: [x] }; out.push(cur); }
+    }
+  });
+  return out.map(p => {
+    const hol = p.days.filter(x => x.isHoliday);
+    return {
+      start: ALL[p.startIdx], end: ALL[p.endIdx],
+      len: p.days.length, holidays: hol, counted: p.days.length - hol.length,
+      work: p.days.filter(x => x.isWork).length
+    };
+  });
+}
+</script>
+
+<script>
+(function () {
+  const STORE_KEY = "vacation-planner-2027";
+  const selected = new Set();
+  let limit = 28, anchor = null, rangeMode = false, clearArmed = null;
+
+  // --- хранение ---
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw);
+      (s.days || []).forEach(k => { if (k in INDEX) selected.add(k); });
+      if (Number.isFinite(s.limit)) limit = s.limit;
+    } catch (e) { /* хранилище недоступно — работаем без него */ }
+  }
+  function save() {
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ days: [...selected].sort(), limit })); } catch (e) {}
+  }
+
+  // --- форматирование ---
+  const fmtDate = x => pad(x.d) + "." + pad(x.m + 1) + "." + YEAR;
+  const plural = (n, a, b, c) => { const n10 = n % 10, n100 = n % 100; return n10 === 1 && n100 !== 11 ? a : (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20) ? b : c); };
+  const daysWord = n => plural(n, "день", "дня", "дней");
+  function rangeLabel(p) {
+    const a = p.start, b = p.end;
+    if (a.key === b.key) return a.d + " " + MONTHS_GEN[a.m];
+    if (a.m === b.m) return a.d + "–" + b.d + " " + MONTHS_GEN[a.m];
+    return a.d + " " + MONTHS_GEN[a.m] + " – " + b.d + " " + MONTHS_GEN[b.m];
+  }
+  function describe(x) {
+    const names = { hol: "нерабочий праздничный день", off: "выходной день", short: "предпраздничный рабочий день, короче на 1 час", work: "рабочий день" };
+    let s = names[x.type];
+    if (x.note && x.type !== "hol") s += " (" + x.note + ")";
+    if (x.type === "hol") s += " — " + x.note;
+    return s;
+  }
+
+  // --- построение календаря ---
+  const monthsEl = document.getElementById("months");
+  const cells = {};
+  const monthBadges = [];
+  for (let m = 0; m < 12; m++) {
+    const card = document.createElement("section");
+    card.className = "month";
+    card.setAttribute("aria-label", MONTHS[m] + " " + YEAR);
+    const head = document.createElement("div");
+    head.className = "month-head";
+    head.innerHTML = '<span class="month-name">' + MONTHS[m] + '</span>';
+    const badge = document.createElement("span");
+    badge.className = "month-vac"; badge.hidden = true;
+    head.appendChild(badge); monthBadges.push(badge);
+    card.appendChild(head);
+
+    const grid = document.createElement("div");
+    grid.className = "grid";
+    WD_SHORT.forEach((w, i) => { const s = document.createElement("span"); s.className = "wd" + (i >= 5 ? " we" : ""); s.textContent = w; grid.appendChild(s); });
+    const first = dowOf(m, 1);
+    for (let i = 0; i < first; i++) grid.appendChild(document.createElement("span"));
+    monthDays(m).forEach(x => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.className = "day " + x.type;
+      b.textContent = x.d;
+      b.dataset.key = x.key;
+      const desc = WEEKDAYS[x.dow] + ", " + x.d + " " + MONTHS_GEN[x.m] + " — " + describe(x);
+      b.title = desc;
+      b.dataset.desc = desc;
+      grid.appendChild(b);
+      cells[x.key] = b;
+    });
+    card.appendChild(grid);
+
+    const n = norms(monthDays(m));
+    const foot = document.createElement("div");
+    foot.className = "month-foot";
+    foot.innerHTML = "<span>раб. <b>" + n.work + "</b></span><span>вых. <b>" + n.off + "</b></span><span>40 ч: <b>" + String(n.h40).replace(".", ",") + "</b></span>";
+    card.appendChild(foot);
+    monthsEl.appendChild(card);
+  }
+
+  // --- таблица норм ---
+  (function buildNorms() {
+    const tb = document.querySelector("#normsTable tbody");
+    const f = v => String(v).replace(".", ",");
+    const row = (label, n, cls) => '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td><td>' + n.cal + '</td><td>' + n.work + '</td><td>' + n.off + '</td><td>' + f(n.h40) + '</td><td>' + f(n.h36) + '</td><td>' + f(n.h24) + '</td></tr>';
+    let html = "";
+    ["I", "II", "III", "IV"].forEach((q, qi) => {
+      for (let m = qi * 3; m < qi * 3 + 3; m++) html += row(MONTHS[m], norms(monthDays(m)));
+      html += row(q + " квартал", norms(ALL.filter(x => Math.floor(x.m / 3) === qi)), "q");
+    });
+    html += row("2027 год", norms(ALL), "y");
+    tb.innerHTML = html;
+  })();
+
+  // --- элементы панели ---
+  const $ = id => document.getElementById(id);
+  const limitEl = $("limit");
+
+  function render() {
+    ALL.forEach(x => {
+      const on = selected.has(x.key);
+      const c = cells[x.key];
+      c.classList.toggle("vac", on);
+      c.classList.toggle("anchor", rangeMode && anchor === x.key);
+      c.setAttribute("aria-pressed", on ? "true" : "false");
+      c.setAttribute("aria-label", c.dataset.desc + (on ? ". В отпуске" + (x.isHoliday ? ", в число дней отпуска не входит" : "") : ""));
+    });
+
+    const ps = periodsOf(selected);
+    const counted = ps.reduce((s, p) => s + p.counted, 0);
+    const hol = ps.reduce((s, p) => s + p.holidays.length, 0);
+    const work = ps.reduce((s, p) => s + p.work, 0);
+
+    $("totalNum").textContent = counted;
+    $("totalUnit").textContent = plural(counted, "календарный день", "календарных дня", "календарных дней") + " отпуска";
+    $("stSelected").textContent = selected.size;
+    $("stHol").textContent = hol;
+    $("stWork").textContent = work;
+    $("stParts").textContent = ps.length;
+
+    const remain = limit - counted;
+    $("remain").textContent = remain >= 0 ? remain : "+" + (-remain);
+    $("remain").style.color = remain < 0 ? "var(--danger)" : "";
+    $("remainLabel").textContent = remain >= 0 ? "Осталось распределить" : "Превышение лимита";
+    const bar = $("bar");
+    bar.classList.toggle("over", remain < 0);
+    bar.firstElementChild.style.width = (limit > 0 ? Math.min(100, counted / limit * 100) : (counted ? 100 : 0)) + "%";
+    $("mbNum").textContent = counted;
+    $("mbRemain").textContent = remain >= 0 ? "осталось " + remain : "превышение " + (-remain);
+
+    // ст. 125 ТК РФ
+    const r = $("rule125");
+    if (counted === 0) r.innerHTML = "";
+    else if (ps.some(p => p.counted >= 14)) r.innerHTML = '<div class="note ok">Есть часть отпуска не менее 14 календарных дней (ст. 125 ТК РФ).</div>';
+    else r.innerHTML = '<div class="note warn">По ст. 125 ТК РФ хотя бы одна часть отпуска должна быть не менее 14 календарных дней.</div>';
+    if (remain < 0) r.innerHTML += '<div class="note warn">Запланировано на ' + (-remain) + ' ' + daysWord(-remain) + ' больше, чем положено.</div>';
+
+    // месячные бейджи
+    for (let m = 0; m < 12; m++) {
+      const n = monthDays(m).filter(x => selected.has(x.key) && !x.isHoliday).length;
+      monthBadges[m].hidden = n === 0;
+      monthBadges[m].textContent = n + " " + plural(n, "день", "дня", "дней");
+    }
+
+    // список периодов
+    const ul = $("periods");
+    if (!ps.length) {
+      ul.innerHTML = '<li class="empty" style="display:block;background:none">Пока пусто. Нажмите на день в календаре, чтобы добавить его в отпуск.</li>';
+    } else {
+      ul.innerHTML = "";
+      ps.forEach((p, i) => {
+        const li = document.createElement("li");
+        let sub = "рабочих дней: " + p.work;
+        if (p.holidays.length) sub += " · праздник " + p.holidays.map(h => pad(h.d) + "." + pad(h.m + 1)).join(", ") + " не учитывается";
+        li.innerHTML = '<div style="min-width:0"><div class="p-dates">' + rangeLabel(p) + '</div><div class="p-sub">' + sub + '</div></div>' +
+          '<span class="p-days">' + p.counted + ' дн.</span>' +
+          '<button class="p-del" type="button" aria-label="Удалить часть ' + rangeLabel(p) + '" data-period="' + i + '">×</button>';
+        ul.appendChild(li);
+      });
+      ul.querySelectorAll(".p-del").forEach(btn => btn.addEventListener("click", () => {
+        const p = ps[+btn.dataset.period];
+        for (let i = INDEX[p.start.key]; i <= INDEX[p.end.key]; i++) selected.delete(ALL[i].key);
+        commit();
+      }));
+    }
+    limitEl.value = limit;
+  }
+
+  function commit() { save(); render(); $("copyBox").hidden = true; }
+
+  function setRange(aKey, bKey, state) {
+    let a = INDEX[aKey], b = INDEX[bKey];
+    if (a > b) [a, b] = [b, a];
+    for (let i = a; i <= b; i++) state ? selected.add(ALL[i].key) : selected.delete(ALL[i].key);
+  }
+
+  monthsEl.addEventListener("click", e => {
+    const b = e.target.closest(".day"); if (!b) return;
+    const k = b.dataset.key;
+    if (rangeMode) {
+      if (!anchor) { anchor = k; render(); return; }
+      setRange(anchor, k, true); anchor = null;
+    } else if (e.shiftKey && anchor) {
+      setRange(anchor, k, !selected.has(k)); anchor = k;
+    } else {
+      selected.has(k) ? selected.delete(k) : selected.add(k);
+      anchor = k;
+    }
+    commit();
+  });
+  // не выделять текст при shift-клике
+  monthsEl.addEventListener("mousedown", e => { if (e.shiftKey) e.preventDefault(); });
+  const showInfo = e => {
+    const b = e.target.closest(".day"); if (!b) return;
+    const x = ALL[INDEX[b.dataset.key]];
+    const inVac = selected.has(x.key);
+    $("dayInfo").innerHTML = "<b>" + WEEKDAYS[x.dow] + ", " + x.d + " " + MONTHS_GEN[x.m] + "</b><br>" + describe(x) +
+      (inVac ? (x.isHoliday ? ". В отпуске, но в число дней отпуска не входит." : ". В отпуске.") : ".");
+  };
+  monthsEl.addEventListener("mouseover", showInfo);
+  monthsEl.addEventListener("focusin", showInfo);
+
+  limitEl.addEventListener("input", () => {
+    const v = parseInt(limitEl.value, 10);
+    limit = Number.isFinite(v) && v >= 0 ? Math.min(v, 365) : 0;
+    save(); render();
+  });
+
+  $("rangeBtn").addEventListener("click", () => {
+    rangeMode = !rangeMode; anchor = null;
+    $("rangeBtn").classList.toggle("on", rangeMode);
+    $("rangeBtn").setAttribute("aria-pressed", rangeMode ? "true" : "false");
+    $("rangeBtn").textContent = rangeMode ? "Диапазон: выберите 2 дня" : "Выбрать диапазон";
+    render();
+  });
+
+  $("clearBtn").addEventListener("click", () => {
+    const btn = $("clearBtn");
+    if (!selected.size) return;
+    if (clearArmed) {
+      clearTimeout(clearArmed); clearArmed = null;
+      selected.clear(); anchor = null; btn.textContent = "Очистить"; commit();
+      flash("План очищен.");
+      return;
+    }
+    btn.textContent = "Нажмите ещё раз";
+    clearArmed = setTimeout(() => { clearArmed = null; btn.textContent = "Очистить"; }, 3000);
+  });
+
+  function planText() {
+    const ps = periodsOf(selected);
+    if (!ps.length) return "";
+    const lines = ["План отпуска на " + YEAR + " год"];
+    ps.forEach((p, i) => {
+      let s = (i + 1) + ". " + fmtDate(p.start) + " – " + fmtDate(p.end) + ": " + p.counted + " " + plural(p.counted, "календарный день", "календарных дня", "календарных дней");
+      if (p.holidays.length) s += " (нерабочие праздничные дни " + p.holidays.map(fmtDate).join(", ") + " в число дней отпуска не входят)";
+      lines.push(s);
+    });
+    const counted = ps.reduce((s, p) => s + p.counted, 0);
+    lines.push("Итого: " + counted + " " + plural(counted, "календарный день", "календарных дня", "календарных дней") + " отпуска из " + limit + " положенных.");
+    return lines.join("\n");
+  }
+  let toastT = null;
+  function flash(msg) { const t = $("toast"); t.textContent = msg; clearTimeout(toastT); toastT = setTimeout(() => t.textContent = "", 2500); }
+  $("copyBtn").addEventListener("click", () => {
+    const text = planText();
+    if (!text) { flash("Сначала отметьте дни отпуска."); return; }
+    const box = $("copyBox");
+    const fallback = () => { box.value = text; box.hidden = false; box.focus(); box.select(); flash("Текст выделен — скопируйте его вручную (Ctrl+C)."); };
+    try {
+      navigator.clipboard.writeText(text).then(() => { box.hidden = true; flash("План скопирован в буфер обмена."); }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
