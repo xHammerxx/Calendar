@@ -155,16 +155,7 @@ kbd { font: inherit; font-size: 11.5px; padding: 1px 5px; border: 1px solid var(
 textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inherit; font-size: 12.5px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 .toast { font-size: 12.5px; color: var(--ok); margin-top: 8px; min-height: 1em; }
 
-section.norms { margin-top: 28px; }
-section.norms h2 { font-family: var(--font-display); font-weight: 500; font-size: 18px; margin: 0 0 12px; }
-.table-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-table { border-collapse: collapse; width: 100%; font-size: 13.5px; font-variant-numeric: tabular-nums; }
-th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid var(--line); white-space: nowrap; }
-th:first-child, td:first-child { text-align: left; }
-thead th { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
-tr.q td { background: var(--bg); font-weight: 600; }
-tr.y td { font-weight: 700; border-bottom: 0; }
-.src { font-size: 12.5px; color: var(--muted); margin-top: 12px; max-width: 80ch; }
+.src { font-size: 12.5px; color: var(--muted); margin-top: 24px; max-width: 80ch; }
 
 .mobilebar { display: none; }
 
@@ -209,16 +200,7 @@ tr.y td { font-weight: 700; border-bottom: 0; }
     <main>
       <div class="months" id="months"></div>
 
-      <section class="norms" aria-labelledby="normsTitle">
-        <h2 id="normsTitle">Нормы рабочего времени 2027</h2>
-        <div class="table-scroll">
-          <table id="normsTable">
-            <thead><tr><th>Период</th><th>Календ. дней</th><th>Рабочих</th><th>Вых. и праздн.</th><th>40 ч/нед</th><th>36 ч/нед</th><th>24 ч/нед</th></tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <p class="src">Праздники — ст. 112 ТК РФ. Переносы — Постановление Правительства РФ от 17.09.2026 № 1187 «О переносе выходных дней в 2027 году»: с 2 января на 5 ноября, с 3 января на 31 декабря, с 20 февраля на 22 февраля. Выходные, совпавшие с праздниками 1 мая, 9 мая и 12 июня, перенесены на 3 мая, 10 мая и 14 июня по ч. 2 ст. 112 ТК РФ. Итоги сверены с КонсультантПлюс и xmlcalendar.ru: 247 рабочих дней, 118 выходных и праздничных, 1972 ч при 40-часовой неделе. Подсчёт отпуска — по ст. 120 ТК РФ: нерабочие праздничные дни в число календарных дней отпуска не включаются.</p>
-      </section>
+      <p class="src">Праздники — ст. 112 ТК РФ. Переносы — Постановление Правительства РФ от 17.09.2026 № 1187 «О переносе выходных дней в 2027 году»: с 2 января на 5 ноября, с 3 января на 31 декабря, с 20 февраля на 22 февраля. Выходные, совпавшие с праздниками 1 мая, 9 мая и 12 июня, перенесены на 3 мая, 10 мая и 14 июня по ч. 2 ст. 112 ТК РФ. Сверено с КонсультантПлюс и xmlcalendar.ru: 247 рабочих дней, 118 выходных и праздничных. Подсчёт отпуска — по ст. 120 ТК РФ: нерабочие праздничные дни в число календарных дней отпуска не включаются.</p>
     </main>
 
     <aside class="panel" aria-label="Мой отпуск">
@@ -431,24 +413,10 @@ function periodsOf(selected) {
     const n = norms(monthDays(m));
     const foot = document.createElement("div");
     foot.className = "month-foot";
-    foot.innerHTML = "<span>раб. <b>" + n.work + "</b></span><span>вых. <b>" + n.off + "</b></span><span>40 ч: <b>" + String(n.h40).replace(".", ",") + "</b></span>";
+    foot.innerHTML = "<span>раб. <b>" + n.work + "</b></span><span>вых. <b>" + n.off + "</b></span>";
     card.appendChild(foot);
     monthsEl.appendChild(card);
   }
-
-  // --- таблица норм ---
-  (function buildNorms() {
-    const tb = document.querySelector("#normsTable tbody");
-    const f = v => String(v).replace(".", ",");
-    const row = (label, n, cls) => '<tr' + (cls ? ' class="' + cls + '"' : '') + '><td>' + label + '</td><td>' + n.cal + '</td><td>' + n.work + '</td><td>' + n.off + '</td><td>' + f(n.h40) + '</td><td>' + f(n.h36) + '</td><td>' + f(n.h24) + '</td></tr>';
-    let html = "";
-    ["I", "II", "III", "IV"].forEach((q, qi) => {
-      for (let m = qi * 3; m < qi * 3 + 3; m++) html += row(MONTHS[m], norms(monthDays(m)));
-      html += row(q + " квартал", norms(ALL.filter(x => Math.floor(x.m / 3) === qi)), "q");
-    });
-    html += row("2027 год", norms(ALL), "y");
-    tb.innerHTML = html;
-  })();
 
   // --- элементы панели ---
   const $ = id => document.getElementById(id);
