@@ -458,7 +458,7 @@ function periodsOf(selected) {
     const r = $("rule125");
     if (counted === 0) r.innerHTML = "";
     else if (ps.some(p => p.counted >= 14)) r.innerHTML = '<div class="note ok">Есть часть отпуска не менее 14 календарных дней (ст. 125 ТК РФ).</div>';
-    else r.innerHTML = '<div class="note warn">По ст. 125 ТК РФ хотя бы одна часть отпуска должна быть не менее 14 календарных дней.</div>';
+    else r.innerHTML = '<div class="note warn">В соответствии со ст. 125 ТК РФ хотя бы одна часть отпуска должна быть не менее 14 календарных дней.</div>';
     if (remain < 0) r.innerHTML += '<div class="note warn">Запланировано на ' + (-remain) + ' ' + daysWord(-remain) + ' больше, чем положено.</div>';
 
     // месячные бейджи
