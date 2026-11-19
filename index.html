@@ -123,6 +123,7 @@ aside.panel { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px);
 .stats dt { color: var(--muted); }
 .stats dd { margin: 0; text-align: right; font-weight: 600; }
 .limit-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.limit-row + .limit-row { margin-top: 8px; }
 .limit-row label { color: var(--muted); font-size: 14px; }
 .limit-row input { width: 76px; font: inherit; font-weight: 600; text-align: right; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); font-variant-numeric: tabular-nums; }
 .limit-row input:focus-visible { outline: 2px solid var(--vac-bg); outline-offset: 1px; }
@@ -219,6 +220,10 @@ textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inher
         <div class="limit-row">
           <label for="limit">Положено дней в году</label>
           <input id="limit" type="number" min="0" max="365" step="1" value="28" inputmode="numeric">
+        </div>
+        <div class="limit-row">
+          <label for="carryover">Неотгуляно с прошлого года</label>
+          <input id="carryover" type="number" min="0" max="365" step="1" value="0" inputmode="numeric">
         </div>
         <div class="bar" id="bar"><i></i></div>
         <div class="stats" style="margin-top:10px">
@@ -341,7 +346,7 @@ function periodsOf(selected) {
 (function () {
   const STORE_KEY = "vacation-planner-2027";
   const selected = new Set();
-  let limit = 28, anchor = null, rangeMode = false, clearArmed = null;
+  let limit = 28, carryover = 0, anchor = null, rangeMode = false, clearArmed = null;
 
   // --- хранение ---
   function load() {
@@ -351,10 +356,11 @@ function periodsOf(selected) {
       const s = JSON.parse(raw);
       (s.days || []).forEach(k => { if (k in INDEX) selected.add(k); });
       if (Number.isFinite(s.limit)) limit = s.limit;
+      if (Number.isFinite(s.carryover)) carryover = s.carryover;
     } catch (e) { /* хранилище недоступно — работаем без него */ }
   }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({ days: [...selected].sort(), limit })); } catch (e) {}
+    try { localStorage.setItem(STORE_KEY, JSON.stringify({ days: [...selected].sort(), limit, carryover })); } catch (e) {}
   }
 
   // --- форматирование ---
@@ -421,6 +427,7 @@ function periodsOf(selected) {
   // --- элементы панели ---
   const $ = id => document.getElementById(id);
   const limitEl = $("limit");
+  const carryoverEl = $("carryover");
 
   function render() {
     ALL.forEach(x => {
@@ -444,13 +451,14 @@ function periodsOf(selected) {
     $("stWork").textContent = work;
     $("stParts").textContent = ps.length;
 
-    const remain = limit - counted;
+    const available = limit + carryover;
+    const remain = available - counted;
     $("remain").textContent = remain >= 0 ? remain : "+" + (-remain);
     $("remain").style.color = remain < 0 ? "var(--danger)" : "";
     $("remainLabel").textContent = remain >= 0 ? "Осталось распределить" : "Превышение лимита";
     const bar = $("bar");
     bar.classList.toggle("over", remain < 0);
-    bar.firstElementChild.style.width = (limit > 0 ? Math.min(100, counted / limit * 100) : (counted ? 100 : 0)) + "%";
+    bar.firstElementChild.style.width = (available > 0 ? Math.min(100, counted / available * 100) : (counted ? 100 : 0)) + "%";
     $("mbNum").textContent = counted;
     $("mbRemain").textContent = remain >= 0 ? "осталось " + remain : "превышение " + (-remain);
 
@@ -459,7 +467,7 @@ function periodsOf(selected) {
     if (counted === 0) r.innerHTML = "";
     else if (ps.some(p => p.counted >= 14)) r.innerHTML = '<div class="note ok">Есть часть отпуска не менее 14 календарных дней (ст. 125 ТК РФ).</div>';
     else r.innerHTML = '<div class="note warn">В соответствии со ст. 125 ТК РФ хотя бы одна часть отпуска должна быть не менее 14 календарных дней.</div>';
-    if (remain < 0) r.innerHTML += '<div class="note warn">Запланировано на ' + (-remain) + ' ' + daysWord(-remain) + ' больше, чем положено.</div>';
+    if (remain < 0) r.innerHTML += '<div class="note warn">Запланировано на ' + (-remain) + ' ' + daysWord(-remain) + ' больше, чем доступно.</div>';
 
     // месячные бейджи
     for (let m = 0; m < 12; m++) {
@@ -490,6 +498,7 @@ function periodsOf(selected) {
       }));
     }
     limitEl.value = limit;
+    carryoverEl.value = carryover;
   }
 
   function commit() { save(); render(); $("copyBox").hidden = true; }
@@ -532,6 +541,12 @@ function periodsOf(selected) {
     save(); render();
   });
 
+  carryoverEl.addEventListener("input", () => {
+    const v = parseInt(carryoverEl.value, 10);
+    carryover = Number.isFinite(v) && v >= 0 ? Math.min(v, 365) : 0;
+    save(); render();
+  });
+
   $("rangeBtn").addEventListener("click", () => {
     rangeMode = !rangeMode; anchor = null;
     $("rangeBtn").classList.toggle("on", rangeMode);
@@ -563,7 +578,9 @@ function periodsOf(selected) {
       lines.push(s);
     });
     const counted = ps.reduce((s, p) => s + p.counted, 0);
-    lines.push("Итого: " + counted + " " + plural(counted, "календарный день", "календарных дня", "календарных дней") + " отпуска из " + limit + " положенных.");
+    const available = limit + carryover;
+    const source = carryover > 0 ? " (" + limit + " за " + YEAR + " год + " + carryover + " с прошлого года)" : "";
+    lines.push("Итого: " + counted + " " + plural(counted, "календарный день", "календарных дня", "календарных дней") + " отпуска из " + available + " доступных" + source + ".");
     return lines.join("\n");
   }
   let toastT = null;
