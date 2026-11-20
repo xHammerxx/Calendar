@@ -18,8 +18,13 @@
   --line: #dce5e0;
   --off-bg: #dcf1e2;
   --off-fg: #1e6b3c;
-  --hol-bg: #2e9d5a;
-  --hol-fg: #ffffff;
+  --year-accent: #2e9d5a;
+  --hol-bg: #f8dce0;
+  --hol-fg: #84263b;
+  --hol-ring: #6f1f33;
+  --move-bg: #5837a3;
+  --move-ink: #512d90;
+  --move-soft: #e6d8ff;
   --short-bg: #f2faf4;
   --short-line: #74c592;
   --vac-bg: #3a8ee6;
@@ -36,7 +41,9 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0e1412; --surface: #151d1a; --fg: #e4ebe7; --muted: #94a39c; --line: #26322d;
-    --off-bg: #183a26; --off-fg: #93dcad; --hol-bg: #2b8f53; --hol-fg: #ffffff;
+    --off-bg: #183a26; --off-fg: #93dcad; --year-accent: #2b8f53;
+    --hol-bg: #4a222c; --hol-fg: #ffb7c3; --hol-ring: #4a222c;
+    --move-bg: #d3b5ff; --move-ink: #d3b5ff; --move-soft: #392859;
     --short-bg: #12251a; --short-line: #3f9a63;
     --vac-bg: #3d8fe3; --vac-fg: #ffffff; --vac-soft: #16283d; --vac-ink: #8cc0f5;
     --danger: #f07a66; --danger-soft: #3a1c17; --ok: #7fd3a0;
@@ -45,7 +52,9 @@
 }
 :root[data-theme="dark"] {
   --bg: #0e1412; --surface: #151d1a; --fg: #e4ebe7; --muted: #94a39c; --line: #26322d;
-  --off-bg: #183a26; --off-fg: #93dcad; --hol-bg: #2b8f53; --hol-fg: #ffffff;
+  --off-bg: #183a26; --off-fg: #93dcad; --year-accent: #2b8f53;
+  --hol-bg: #4a222c; --hol-fg: #ffb7c3; --hol-ring: #4a222c;
+  --move-bg: #d3b5ff; --move-ink: #d3b5ff; --move-soft: #392859;
   --short-bg: #12251a; --short-line: #3f9a63;
   --vac-bg: #3d8fe3; --vac-fg: #ffffff; --vac-soft: #16283d; --vac-ink: #8cc0f5;
   --danger: #f07a66; --danger-soft: #3a1c17; --ok: #7fd3a0;
@@ -72,7 +81,7 @@ body {
 header.top { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px 32px; margin-bottom: 22px; }
 .kicker { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4vw, 40px); line-height: 1.05; margin: 6px 0 0; text-wrap: balance; letter-spacing: -.01em; }
-h1 .yr { color: var(--hol-bg); }
+h1 .yr { color: var(--year-accent); }
 .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 13px; color: var(--muted); }
 .legend span { display: inline-flex; align-items: center; gap: 7px; }
 .sw { width: 18px; height: 18px; border-radius: 5px; display: inline-block; flex: none; position: relative; }
@@ -80,7 +89,10 @@ h1 .yr { color: var(--hol-bg); }
 .sw.off { background: var(--off-bg); }
 .sw.short { background: var(--short-bg); box-shadow: inset 0 0 0 1.5px var(--short-line); }
 .sw.vac { background: var(--vac-bg); }
-.sw.vachol { background: var(--vac-bg); box-shadow: inset 0 0 0 3px var(--hol-bg); }
+.sw.vachol { background: var(--vac-bg); box-shadow: inset 0 0 0 3px var(--hol-ring); }
+.sw.moved { background: var(--move-bg); }
+.sw.released { border: 2px dashed var(--move-ink); }
+[hidden] { display: none !important; }
 
 .layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 24px; align-items: start; }
 .months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
@@ -108,7 +120,12 @@ h1 .yr { color: var(--hol-bg); }
 .day.short { background: var(--short-bg); color: var(--off-fg); box-shadow: inset 0 0 0 1.5px var(--short-line); }
 .day.short::after { content: "*"; position: absolute; top: 1px; right: 4px; font-size: 11px; line-height: 1; }
 .day.vac { background: var(--vac-bg); color: var(--vac-fg); box-shadow: none; font-weight: 600; }
-.day.vac.hol { box-shadow: inset 0 0 0 3px var(--hol-bg); }
+.day.vac.hol { box-shadow: inset 0 0 0 3px var(--hol-ring); }
+.day.vac.moved { background: var(--move-bg); color: var(--surface); }
+.day.released, .day.move-from { outline: 2px dashed var(--move-ink); outline-offset: -2px; }
+.day.move-to { background: var(--move-soft); color: var(--move-ink); font-weight: 700; outline: 2px solid var(--move-ink); outline-offset: -2px; }
+.day.move-to.hol { box-shadow: inset 0 0 0 5px var(--hol-ring); }
+.day:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
 .day.anchor { outline: 2px dashed var(--vac-bg); outline-offset: 1px; }
 .month-foot { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .month-foot b { color: var(--fg); font-weight: 600; }
@@ -155,6 +172,29 @@ kbd { font: inherit; font-size: 11.5px; padding: 1px 5px; border: 1px solid var(
 .dayinfo b { color: var(--fg); }
 textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inherit; font-size: 12.5px; padding: 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--fg); }
 .toast { font-size: 12.5px; color: var(--ok); margin-top: 8px; min-height: 1em; }
+.schedule-status { margin: 0 0 10px; font-weight: 600; }
+.schedule-note { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+.move-form { border: 1px solid var(--line); border-radius: 9px; padding: 12px; margin-bottom: 12px; }
+.move-form label { display: grid; gap: 4px; margin-bottom: 8px; font-size: 13px; }
+.move-form .move-mode { display: flex; align-items: center; gap: 7px; }
+.move-form select, .move-form input[type="date"] { width: 100%; min-width: 0; font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px; }
+.move-preview { margin: 10px 0; font-size: 13px; }
+.move-preview p { margin: 4px 0; }
+.move-dates { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; }
+.move-history { margin-top: 12px; }
+.move-history summary { cursor: pointer; font-weight: 600; }
+.move-history ol { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.move-history li { background: var(--move-soft); border-radius: 8px; padding: 8px; font-size: 13px; }
+.move-history button.btn { padding: 4px 7px; }
+.move-history .cancel-move { margin-top: 8px; }
+.cancel-move p { margin: 0 0 8px; }
+.cancel-move ul { margin: 0 0 8px; padding-left: 20px; }
+.cancel-move ul li { background: none; padding: 0; }
+.move-warning { color: var(--danger); }
+button.btn:disabled { opacity: .55; cursor: default; }
+@media (min-width: 861px) {
+  aside.panel { max-height: calc(100vh - 32px - env(safe-area-inset-top, 0px)); overflow-y: auto; scrollbar-width: thin; }
+}
 
 .src { font-size: 12.5px; color: var(--muted); margin-top: 24px; max-width: 80ch; }
 
@@ -194,6 +234,8 @@ textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inher
       <span><i class="sw short"></i>Предпраздничный (−1 ч)</span>
       <span><i class="sw vac"></i>Отпуск</span>
       <span><i class="sw vachol"></i>Праздник в отпуске (не учитывается)</span>
+      <span id="moveLegend" hidden><i class="sw moved"></i>Перенесённый отпуск</span>
+      <span id="releaseLegend" hidden><i class="sw released"></i>Освободившиеся даты</span>
     </div>
   </header>
 
@@ -205,6 +247,20 @@ textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inher
     </main>
 
     <aside class="panel" aria-label="Мой отпуск">
+      <div class="card">
+        <h2>График отпуска</h2>
+        <p class="schedule-status" id="scheduleStatus">Черновик на 2027 год</p>
+        <p class="schedule-note" id="scheduleNote">Зафиксируйте согласованные даты, чтобы вести историю переносов.</p>
+        <button class="btn" id="approveBtn" type="button">Зафиксировать график</button>
+        <div class="btns" id="approveActions" hidden>
+          <button class="btn primary" id="approveConfirm" type="button">Подтвердить фиксацию</button>
+          <button class="btn" id="approveCancel" type="button">Отмена</button>
+        </div>
+        <div class="btns" id="scheduleViews" hidden>
+          <button class="btn" id="currentView" type="button" aria-pressed="true">Актуальный</button>
+          <button class="btn" id="originalView" type="button" aria-pressed="false">Утвержденный</button>
+        </div>
+      </div>
       <div class="card">
         <h2>Запланировано</h2>
         <div class="total"><span class="num" id="totalNum">0</span><span class="unit" id="totalUnit">календарных дней отпуска</span></div>
@@ -234,15 +290,34 @@ textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inher
 
       <div class="card">
         <h2>Части отпуска</h2>
+        <form class="move-form" id="moveForm" hidden>
+          <h2 id="moveTitle">Перенос отпуска</h2>
+          <label class="move-mode"><input id="movePartial" type="checkbox"> Перенести часть периода</label>
+          <div id="moveSource" hidden>
+            <label>Переносим с <select id="moveStart"></select></label>
+            <label>Переносим по <select id="moveEnd"></select></label>
+          </div>
+          <label>Новая дата начала <input id="moveDate" type="date" min="2027-01-01" max="2027-12-31"></label>
+          <p class="schedule-note">Укажите дату или нажмите на нужный день в календаре.</p>
+          <div class="move-preview" id="movePreview" aria-live="polite"></div>
+          <div class="btns">
+            <button class="btn primary" id="moveConfirm" type="submit" disabled>Подтвердить перенос</button>
+            <button class="btn" id="moveCancel" type="button">Отмена</button>
+          </div>
+        </form>
         <ul class="periods" id="periods"></ul>
         <div class="btns" style="margin-top:12px">
           <button class="btn" id="rangeBtn" type="button" aria-pressed="false">Выбрать диапазон</button>
           <button class="btn primary" id="copyBtn" type="button">Скопировать план</button>
           <button class="btn danger" id="clearBtn" type="button">Очистить</button>
         </div>
-        <p class="hint">Клик по дню добавляет его в отпуск, повторный клик убирает. <kbd>Shift</kbd> + клик отмечает все дни от предыдущего нажатого. На телефоне включите «Выбрать диапазон» и нажмите первый и последний день.</p>
+        <p class="hint" id="draftHint">Клик по дню добавляет его в отпуск, повторный клик убирает. <kbd>Shift</kbd> + клик отмечает все дни от предыдущего нажатого. На телефоне включите «Выбрать диапазон» и нажмите первый и последний день.</p>
         <div class="toast" id="toast" role="status" aria-live="polite"></div>
         <textarea class="copybox" id="copyBox" readonly hidden aria-label="Текст плана отпуска"></textarea>
+        <details class="move-history" id="moveHistory" hidden>
+          <summary id="moveHistoryTitle">История переносов</summary>
+          <ol id="moveLog"></ol>
+        </details>
       </div>
 
       <div class="card">
@@ -347,6 +422,41 @@ function periodsOf(selected) {
   const STORE_KEY = "vacation-planner-2027";
   const selected = new Set();
   let limit = 28, carryover = 0, anchor = null, rangeMode = false, clearArmed = null;
+  let approved = null, moves = [], originalView = false, approving = false;
+  let editingPeriod = null, highlightedMove = null, cancelTarget = null;
+
+  const isDayKey = key => Object.hasOwn(INDEX, key);
+  const dayRange = (from, to) => ALL.slice(INDEX[from], INDEX[to] + 1).map(day => day.key);
+  const countsAsLeave = key => !ALL[INDEX[key]].isHoliday;
+
+  function applyMove(days, move) {
+    move.from.forEach(key => days.delete(key));
+    move.to.forEach(key => days.add(key));
+  }
+
+  function restoreSchedule() {
+    selected.clear();
+    approved.forEach(key => selected.add(key));
+    moves.forEach(move => applyMove(selected, move));
+  }
+
+  const approvedOrigins = () => new Map([...approved].filter(countsAsLeave).map(key => [key, key]));
+  const moveOrigins = (origins, move) => move.from.filter(countsAsLeave).map(key => origins.get(key));
+
+  function applyOrigins(origins, move, source) {
+    move.from.forEach(key => origins.delete(key));
+    move.to.filter(countsAsLeave).forEach((key, i) => origins.set(key, source[i]));
+  }
+
+  function originalDates(onMove) {
+    const origins = approvedOrigins();
+    for (const move of moves) {
+      const source = moveOrigins(origins, move);
+      if (onMove) onMove(move, source.filter(isDayKey));
+      applyOrigins(origins, move, source);
+    }
+    return origins;
+  }
 
   // --- хранение ---
   function load() {
@@ -354,13 +464,24 @@ function periodsOf(selected) {
       const raw = localStorage.getItem(STORE_KEY);
       if (!raw) return;
       const s = JSON.parse(raw);
-      (s.days || []).forEach(k => { if (k in INDEX) selected.add(k); });
+      (s.days || []).forEach(k => { if (isDayKey(k)) selected.add(k); });
       if (Number.isFinite(s.limit)) limit = s.limit;
       if (Number.isFinite(s.carryover)) carryover = s.carryover;
+      if (Array.isArray(s.approved) && s.approved.some(key => isDayKey(key) && countsAsLeave(key))) {
+        approved = new Set(s.approved.filter(isDayKey));
+        moves = Array.isArray(s.moves) ? s.moves.filter(move =>
+          move && [move.from, move.to].every(keys => Array.isArray(keys) && keys.length && keys.every(isDayKey))
+        ) : [];
+        restoreSchedule();
+      }
     } catch (e) { /* хранилище недоступно — работаем без него */ }
   }
   function save() {
-    try { localStorage.setItem(STORE_KEY, JSON.stringify({ days: [...selected].sort(), limit, carryover })); } catch (e) {}
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        days: [...selected].sort(), limit, carryover, approved: approved && [...approved], moves
+      }));
+    } catch (e) {}
   }
 
   // --- форматирование ---
@@ -373,6 +494,8 @@ function periodsOf(selected) {
     if (a.m === b.m) return a.d + "–" + b.d + " " + MONTHS_GEN[a.m];
     return a.d + " " + MONTHS_GEN[a.m] + " – " + b.d + " " + MONTHS_GEN[b.m];
   }
+  const dateLabel = key => rangeLabel({ start: ALL[INDEX[key]], end: ALL[INDEX[key]] });
+  const datesLabel = keys => rangeLabel({ start: ALL[INDEX[keys[0]]], end: ALL[INDEX[keys.at(-1)]] });
   function describe(x) {
     const names = { hol: "нерабочий праздничный день", off: "выходной день", short: "предпраздничный рабочий день, короче на 1 час", work: "рабочий день" };
     let s = names[x.type];
@@ -430,23 +553,34 @@ function periodsOf(selected) {
   const carryoverEl = $("carryover");
 
   function render() {
+    const schedule = originalView ? approved : selected;
+    const origins = approved ? originalDates() : new Map();
+    renderScheduleControls();
     ALL.forEach(x => {
-      const on = selected.has(x.key);
+      const on = schedule.has(x.key);
+      const origin = origins.get(x.key);
+      const moved = !originalView && on && origin && origin !== x.key;
+      const released = !originalView && !on && approved?.has(x.key);
       const c = cells[x.key];
       c.classList.toggle("vac", on);
+      c.classList.toggle("moved", Boolean(moved));
+      c.classList.toggle("released", Boolean(released));
       c.classList.toggle("anchor", rangeMode && anchor === x.key);
-      c.setAttribute("aria-pressed", on ? "true" : "false");
-      c.setAttribute("aria-label", c.dataset.desc + (on ? ". В отпуске" + (x.isHoliday ? ", в число дней отпуска не входит" : "") : ""));
+      if (approved) c.removeAttribute("aria-pressed");
+      else c.setAttribute("aria-pressed", on ? "true" : "false");
+      const status = on ? ". В отпуске" + (x.isHoliday ? ", в число дней отпуска не входит" : "") : "";
+      c.setAttribute("aria-label", c.dataset.desc + status + (moved ? ". Перенесено с " + dateLabel(origin) : "") +
+        (released ? ". Дата освободилась после переноса" : ""));
     });
 
-    const ps = periodsOf(selected);
+    const ps = periodsOf(schedule);
     const counted = ps.reduce((s, p) => s + p.counted, 0);
     const hol = ps.reduce((s, p) => s + p.holidays.length, 0);
     const work = ps.reduce((s, p) => s + p.work, 0);
 
     $("totalNum").textContent = counted;
     $("totalUnit").textContent = plural(counted, "календарный день", "календарных дня", "календарных дней") + " отпуска";
-    $("stSelected").textContent = selected.size;
+    $("stSelected").textContent = schedule.size;
     $("stHol").textContent = hol;
     $("stWork").textContent = work;
     $("stParts").textContent = ps.length;
@@ -471,7 +605,7 @@ function periodsOf(selected) {
 
     // месячные бейджи
     for (let m = 0; m < 12; m++) {
-      const n = monthDays(m).filter(x => selected.has(x.key) && !x.isHoliday).length;
+      const n = monthDays(m).filter(x => schedule.has(x.key) && !x.isHoliday).length;
       monthBadges[m].hidden = n === 0;
       monthBadges[m].textContent = n + " " + plural(n, "день", "дня", "дней");
     }
@@ -487,18 +621,27 @@ function periodsOf(selected) {
         let sub = "рабочих дней: " + p.work;
         if (p.holidays.length) sub += " · праздник " + p.holidays.map(h => pad(h.d) + "." + pad(h.m + 1)).join(", ") + " не учитывается";
         li.innerHTML = '<div style="min-width:0"><div class="p-dates">' + rangeLabel(p) + '</div><div class="p-sub">' + sub + '</div></div>' +
-          '<span class="p-days">' + p.counted + ' дн.</span>' +
-          '<button class="p-del" type="button" aria-label="Удалить часть ' + rangeLabel(p) + '" data-period="' + i + '">×</button>';
+          '<span class="p-days">' + p.counted + ' дн.</span>';
+        if (!approved || (!originalView && p.counted)) {
+          const action = document.createElement("button");
+          action.type = "button";
+          action.className = approved ? "btn" : "p-del";
+          action.textContent = approved ? "Перенести" : "×";
+          action.setAttribute("aria-label", (approved ? "Перенести " : "Удалить часть ") + rangeLabel(p));
+          action.addEventListener("click", () => {
+            if (approved) return openMove(p);
+            dayRange(p.start.key, p.end.key).forEach(key => selected.delete(key));
+            commit();
+          });
+          li.appendChild(action);
+        }
         ul.appendChild(li);
       });
-      ul.querySelectorAll(".p-del").forEach(btn => btn.addEventListener("click", () => {
-        const p = ps[+btn.dataset.period];
-        for (let i = INDEX[p.start.key]; i <= INDEX[p.end.key]; i++) selected.delete(ALL[i].key);
-        commit();
-      }));
     }
     limitEl.value = limit;
     carryoverEl.value = carryover;
+    renderHistory();
+    refreshMove();
   }
 
   function commit() { save(); render(); $("copyBox").hidden = true; }
@@ -512,6 +655,13 @@ function periodsOf(selected) {
   monthsEl.addEventListener("click", e => {
     const b = e.target.closest(".day"); if (!b) return;
     const k = b.dataset.key;
+    if (approved) {
+      if (editingPeriod) {
+        $("moveDate").value = YEAR + "-" + k;
+        refreshMove();
+      }
+      return;
+    }
     if (rangeMode) {
       if (!anchor) { anchor = k; render(); return; }
       setRange(anchor, k, true); anchor = null;
@@ -528,12 +678,298 @@ function periodsOf(selected) {
   const showInfo = e => {
     const b = e.target.closest(".day"); if (!b) return;
     const x = ALL[INDEX[b.dataset.key]];
-    const inVac = selected.has(x.key);
+    const inVac = (originalView ? approved : selected).has(x.key);
+    const origin = !originalView && approved && inVac ? originalDates().get(x.key) : null;
+    const transferInfo = origin && origin !== x.key ? " Перенесено с " + dateLabel(origin) + "."
+      : !originalView && !inVac && approved?.has(x.key) ? " Дата освободилась после переноса." : "";
     $("dayInfo").innerHTML = "<b>" + WEEKDAYS[x.dow] + ", " + x.d + " " + MONTHS_GEN[x.m] + "</b><br>" + describe(x) +
-      (inVac ? (x.isHoliday ? ". В отпуске, но в число дней отпуска не входит." : ". В отпуске.") : ".");
+      (inVac ? (x.isHoliday ? ". В отпуске, но в число дней отпуска не входит." : ". В отпуске.") : ".") + transferInfo;
   };
   monthsEl.addEventListener("mouseover", showInfo);
   monthsEl.addEventListener("focusin", showInfo);
+
+  function renderScheduleControls() {
+    $("scheduleStatus").textContent = approved ? "График на " + YEAR + " год зафиксирован" : "Черновик на " + YEAR + " год";
+    $("scheduleNote").textContent = approving
+      ? "После фиксации исходные даты сохранятся, а менять график можно будет через переносы."
+      : approved ? "Даты можно изменить через «Перенести» в списке частей отпуска."
+        : "Зафиксируйте согласованные даты, чтобы вести историю переносов.";
+    $("approveBtn").hidden = Boolean(approved) || approving;
+    $("approveBtn").disabled = ![...selected].some(countsAsLeave);
+    $("approveActions").hidden = !approving;
+    $("scheduleViews").hidden = !approved;
+    $("rangeBtn").hidden = $("clearBtn").hidden = $("draftHint").hidden = Boolean(approved);
+    $("moveLegend").hidden = $("releaseLegend").hidden = originalView || !moves.length;
+    for (const [id, active] of [["currentView", !originalView], ["originalView", originalView]]) {
+      $(id).classList.toggle("on", active);
+      $(id).setAttribute("aria-pressed", active);
+    }
+    $("copyBtn").textContent = originalView ? "Скопировать актуальный график" : "Скопировать план";
+  }
+
+  $("approveBtn").addEventListener("click", () => {
+    approving = true;
+    renderScheduleControls();
+    $("approveConfirm").focus();
+  });
+  $("approveCancel").addEventListener("click", () => {
+    approving = false;
+    renderScheduleControls();
+    $("approveBtn").focus();
+  });
+  $("approveConfirm").addEventListener("click", () => {
+    if (![...selected].some(countsAsLeave)) return;
+    approved = new Set(selected);
+    approving = false;
+    rangeMode = false;
+    anchor = null;
+    commit();
+    $("currentView").focus();
+  });
+  for (const id of ["currentView", "originalView"]) {
+    $(id).addEventListener("click", () => {
+      originalView = id === "originalView";
+      editingPeriod = highlightedMove = null;
+      render();
+    });
+  }
+
+  function openMove(period) {
+    editingPeriod = dayRange(period.start.key, period.end.key);
+    highlightedMove = null;
+    if (cancelTarget) {
+      cancelTarget = null;
+      renderHistory();
+    }
+    $("moveTitle").textContent = "Перенос: " + rangeLabel(period);
+    $("movePartial").checked = false;
+    for (const id of ["moveStart", "moveEnd"]) {
+      $(id).replaceChildren(...editingPeriod.map(key => new Option(dateLabel(key), key)));
+    }
+    $("moveEnd").value = editingPeriod.at(-1);
+    $("moveDate").value = "";
+    refreshMove();
+    $("moveForm").scrollIntoView({ block: "nearest" });
+    $("movePartial").focus({ preventScroll: true });
+  }
+
+  function previewMove() {
+    const partial = $("movePartial").checked;
+    const from = partial ? dayRange($("moveStart").value, $("moveEnd").value) : editingPeriod;
+    const count = from.filter(countsAsLeave).length;
+    if (!from.length) return { error: "Дата окончания должна быть не раньше даты начала." };
+    if (!count) return { from, error: "В выбранных датах нет учитываемых дней отпуска." };
+    const date = $("moveDate").value;
+    if (!date) return { from, count };
+    const start = date.slice(5);
+    if (!date.startsWith(YEAR + "-") || !isDayKey(start)) {
+      return { from, count, error: "Выберите дату в пределах " + YEAR + " года." };
+    }
+    const to = [];
+    let remaining = count;
+    for (let i = INDEX[start]; i < ALL.length && remaining > 0; i++) {
+      to.push(ALL[i].key);
+      if (!ALL[i].isHoliday) remaining--;
+    }
+    if (remaining) return { from, count, error: "Период выходит за пределы " + YEAR + " года." };
+    if (to.some(key => selected.has(key) && !from.includes(key))) {
+      return { from, count, error: "Новые даты пересекаются с другой частью отпуска." };
+    }
+    if (from.length === to.length && from.every((key, i) => key === to[i])) {
+      return { from, count, error: "Выберите другую дату начала." };
+    }
+    return { from, to, count };
+  }
+
+  function refreshMove() {
+    $("moveForm").hidden = !editingPeriod;
+    const preview = editingPeriod ? previewMove() : null;
+    const highlight = preview || highlightedMove;
+    const fromKeys = new Set(highlight?.from);
+    const toKeys = new Set(highlight?.to);
+    for (const day of ALL) {
+      cells[day.key].classList.toggle("move-from", fromKeys.has(day.key));
+      cells[day.key].classList.toggle("move-to", toKeys.has(day.key));
+    }
+    if (!preview) return;
+    const { from, to, count, error } = preview;
+    $("moveSource").hidden = !$("movePartial").checked;
+    $("moveConfirm").disabled = !to;
+    const box = $("movePreview");
+    box.replaceChildren();
+    function line(message, warning = false) {
+      const p = document.createElement("p");
+      p.textContent = message;
+      p.classList.toggle("move-warning", warning);
+      box.appendChild(p);
+    }
+    if (count) line("Было · " + datesLabel(from) + " · " + count + " " + daysWord(count));
+    if (error) line(error, true);
+    if (!to) return;
+    const holidays = to.filter(key => !countsAsLeave(key)).length;
+    line("Стало · " + datesLabel(to) + (holidays ? " · праздников вне подсчёта: " + holidays : ""));
+    const left = periodsOf(new Set(editingPeriod.filter(key => !fromKeys.has(key))));
+    if (left.length) line("Остаётся · " + left.map(rangeLabel).join(", "));
+    const result = new Set(selected);
+    applyMove(result, preview);
+    if (!periodsOf(result).some(period => period.counted >= 14)) {
+      line("В новом графике нет части отпуска на 14 дней (ст. 125 ТК РФ).", true);
+    }
+  }
+
+  for (const id of ["movePartial", "moveStart", "moveEnd", "moveDate"]) {
+    $(id).addEventListener("input", refreshMove);
+  }
+  $("moveCancel").addEventListener("click", () => {
+    editingPeriod = null;
+    refreshMove();
+    $("periods").querySelector("button")?.focus();
+  });
+  function confirmMove(event) {
+    event.preventDefault();
+    if (!editingPeriod) return;
+    const { from, to } = previewMove();
+    if (!to) return;
+    const move = { from, to };
+    moves.push(move);
+    applyMove(selected, move);
+    editingPeriod = null;
+    $("moveHistory").open = true;
+    commit();
+    flash("Перенос сохранён.");
+    $("moveHistoryTitle").focus();
+  }
+  // Встроенный предпросмотр может блокировать отправку форм.
+  $("moveConfirm").addEventListener("click", confirmMove);
+  $("moveForm").addEventListener("submit", confirmMove);
+
+  function planCancellation(target) {
+    const days = new Set(approved);
+    const origins = approvedOrigins();
+    const kept = [], affected = [];
+    originalDates((move, expectedOrigins) => {
+      if (move === target) return;
+      const source = new Set(move.from);
+      const allPresent = move.from.every(key => days.has(key));
+      const sameOrigins = moveOrigins(origins, move).every((key, i) => key === expectedOrigins[i]);
+      const destinationFree = move.to.every(key => !days.has(key) || source.has(key));
+      if (!allPresent || !sameOrigins || !destinationFree) {
+        affected.push(move);
+        return;
+      }
+      kept.push(move);
+      applyMove(days, move);
+      applyOrigins(origins, move, expectedOrigins);
+    });
+    return { kept, affected };
+  }
+
+  const moveLabel = move => datesLabel(move.from) + " → " + datesLabel(move.to);
+
+  function cancellationControls(move) {
+    const controls = document.createElement("div");
+    controls.className = "cancel-move";
+    function addButton(label, action, danger = false) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = danger ? "btn danger" : "btn";
+      button.textContent = label;
+      button.addEventListener("click", action);
+      return button;
+    }
+    if (cancelTarget !== move) {
+      const button = addButton("Отменить перенос", () => {
+        cancelTarget = move;
+        renderHistory();
+        $("keepMove").focus();
+      });
+      button.setAttribute("aria-label", "Отменить перенос " + moveLabel(move));
+      button.id = "cancelMove-" + moves.indexOf(move);
+      controls.appendChild(button);
+      return controls;
+    }
+
+    const { affected } = planCancellation(move);
+    const prompt = document.createElement("p");
+    prompt.textContent = "Вернуть отпуск на " + datesLabel(move.from) + "?";
+    controls.appendChild(prompt);
+    if (affected.length) {
+      const warning = document.createElement("p");
+      warning.className = "move-warning";
+      warning.textContent = "Также будут отменены переносы, которые зависят от этих дат:";
+      const list = document.createElement("ul");
+      for (const entry of affected) {
+        const item = document.createElement("li");
+        item.textContent = moveLabel(entry);
+        list.appendChild(item);
+      }
+      controls.append(warning, list);
+    }
+    const actions = document.createElement("div");
+    actions.className = "btns";
+    const keepButton = addButton("Оставить перенос", () => {
+      cancelTarget = null;
+      renderHistory();
+      $("cancelMove-" + moves.indexOf(move)).focus();
+    });
+    keepButton.id = "keepMove";
+    actions.append(addButton("Подтвердить отмену", () => {
+      const plan = planCancellation(move);
+      moves = plan.kept;
+      editingPeriod = highlightedMove = cancelTarget = null;
+      originalView = false;
+      restoreSchedule();
+      commit();
+      flash(plan.affected.length ? "Выбранный и связанные переносы отменены." : "Перенос отменён.");
+      $(moves.length ? "moveHistoryTitle" : "currentView").focus();
+    }, true), keepButton);
+    controls.appendChild(actions);
+    return controls;
+  }
+
+  function renderHistory() {
+    $("moveHistory").hidden = !moves.length;
+    $("moveHistoryTitle").textContent = "История переносов (" + moves.length + ")";
+    const list = $("moveLog");
+    list.replaceChildren();
+    if (!moves.length) return;
+    originalDates((move, origins) => {
+      const li = document.createElement("li");
+      const title = document.createElement("strong");
+      const count = move.from.filter(countsAsLeave).length;
+      title.textContent = count + " " + daysWord(count) + " отпуска";
+      li.appendChild(title);
+      const dates = document.createElement("div");
+      dates.className = "move-dates";
+      for (const [label, keys] of [["Было", move.from], ["Стало", move.to]]) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn";
+        btn.textContent = label + " · " + datesLabel(keys);
+        btn.addEventListener("click", () => {
+          if (originalView || editingPeriod) {
+            originalView = false;
+            editingPeriod = null;
+            render();
+          }
+          highlightedMove = move;
+          refreshMove();
+          cells[keys[0]].focus({ preventScroll: true });
+          cells[keys[0]].scrollIntoView({ block: "center" });
+        });
+        dates.appendChild(btn);
+      }
+      li.appendChild(dates);
+      const source = move.from.filter(countsAsLeave);
+      if (origins.length && origins.some((key, i) => key !== source[i])) {
+        const original = document.createElement("div");
+        original.textContent = "По исходному графику · " + periodsOf(new Set(origins)).map(rangeLabel).join(", ");
+        li.appendChild(original);
+      }
+      li.appendChild(cancellationControls(move));
+      list.prepend(li);
+    });
+  }
 
   limitEl.addEventListener("input", () => {
     const v = parseInt(limitEl.value, 10);
@@ -571,7 +1007,7 @@ function periodsOf(selected) {
   function planText() {
     const ps = periodsOf(selected);
     if (!ps.length) return "";
-    const lines = ["План отпуска на " + YEAR + " год"];
+    const lines = [(approved ? "Актуальный график отпуска на " : "План отпуска на ") + YEAR + " год"];
     ps.forEach((p, i) => {
       let s = (i + 1) + ". " + fmtDate(p.start) + " – " + fmtDate(p.end) + ": " + p.counted + " " + plural(p.counted, "календарный день", "календарных дня", "календарных дней");
       if (p.holidays.length) s += " (нерабочие праздничные дни " + p.holidays.map(fmtDate).join(", ") + " в число дней отпуска не входят)";
