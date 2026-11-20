@@ -192,6 +192,11 @@ textarea.copybox { width: 100%; min-height: 120px; margin-top: 10px; font: inher
 .cancel-move ul li { background: none; padding: 0; }
 .move-warning { color: var(--danger); }
 button.btn:disabled { opacity: .55; cursor: default; }
+.download-dialog { width: min(420px, calc(100% - 32px)); color: var(--fg); }
+.download-dialog::backdrop { background: rgb(0 0 0 / .45); }
+.download-dialog label { display: block; margin-bottom: 4px; font-size: 13px; }
+.download-dialog input { width: 100%; padding: 8px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); font: inherit; }
+.download-dialog .move-warning { margin: 0 0 8px; font-size: 13px; }
 @media (min-width: 861px) {
   aside.panel { max-height: calc(100vh - 32px - env(safe-area-inset-top, 0px)); overflow-y: auto; scrollbar-width: thin; }
 }
@@ -309,6 +314,7 @@ button.btn:disabled { opacity: .55; cursor: default; }
         <div class="btns" style="margin-top:12px">
           <button class="btn" id="rangeBtn" type="button" aria-pressed="false">Выбрать диапазон</button>
           <button class="btn primary" id="copyBtn" type="button">Скопировать план</button>
+          <button class="btn" id="downloadBtn" type="button">Скачать календарь с графиком</button>
           <button class="btn danger" id="clearBtn" type="button">Очистить</button>
         </div>
         <p class="hint" id="draftHint">Клик по дню добавляет его в отпуск, повторный клик убирает. <kbd>Shift</kbd> + клик отмечает все дни от предыдущего нажатого. На телефоне включите «Выбрать диапазон» и нажмите первый и последний день.</p>
@@ -417,9 +423,24 @@ function periodsOf(selected) {
 }
 </script>
 
+<dialog class="card download-dialog" id="downloadDialog" aria-labelledby="downloadTitle">
+  <h2 id="downloadTitle">Скачать календарь с графиком</h2>
+  <label for="downloadName">Имя файла</label>
+  <input type="text" id="downloadName" maxlength="120" aria-describedby="downloadError" autofocus>
+  <p class="move-warning" id="downloadError" role="status"></p>
+  <div class="btns">
+    <button class="btn primary" id="downloadConfirm" type="button">Скачать</button>
+    <button class="btn" id="downloadCancel" type="button">Отмена</button>
+  </div>
+</dialog>
+
+<script id="scheduleSnapshot" type="application/json">null</script>
 <script>
 (function () {
-  const STORE_KEY = "vacation-planner-2027";
+  // Сохраняем чистую разметку до отрисовки календаря и истории.
+  const exportTemplate = document.documentElement.cloneNode(true);
+  const snapshot = parseState(document.getElementById("scheduleSnapshot").textContent);
+  const STORE_KEY = "vacation-planner-2027" + (snapshot?.id ? ":" + snapshot.id : "");
   const selected = new Set();
   let limit = 28, carryover = 0, anchor = null, rangeMode = false, clearArmed = null;
   let approved = null, moves = [], originalView = false, approving = false;
@@ -459,29 +480,37 @@ function periodsOf(selected) {
   }
 
   // --- хранение ---
-  function load() {
+  function parseState(text) {
     try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw);
-      (s.days || []).forEach(k => { if (isDayKey(k)) selected.add(k); });
-      if (Number.isFinite(s.limit)) limit = s.limit;
-      if (Number.isFinite(s.carryover)) carryover = s.carryover;
-      if (Array.isArray(s.approved) && s.approved.some(key => isDayKey(key) && countsAsLeave(key))) {
-        approved = new Set(s.approved.filter(isDayKey));
-        moves = Array.isArray(s.moves) ? s.moves.filter(move =>
-          move && [move.from, move.to].every(keys => Array.isArray(keys) && keys.length && keys.every(isDayKey))
-        ) : [];
-        restoreSchedule();
-      }
-    } catch (e) { /* хранилище недоступно — работаем без него */ }
+      const value = JSON.parse(text);
+      return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+    } catch (e) { return null; }
+  }
+  function load() {
+    let stored = null;
+    try { stored = parseState(localStorage.getItem(STORE_KEY)); }
+    catch (e) { /* встроенный график доступен и без хранилища */ }
+    const s = stored || snapshot?.state;
+    if (!s) return;
+    if (Array.isArray(s.days)) s.days.filter(isDayKey).forEach(key => selected.add(key));
+    if (Number.isFinite(s.limit)) limit = s.limit;
+    if (Number.isFinite(s.carryover)) carryover = s.carryover;
+    if (Array.isArray(s.approved) && s.approved.some(key => isDayKey(key) && countsAsLeave(key))) {
+      approved = new Set(s.approved.filter(isDayKey));
+      moves = Array.isArray(s.moves) ? s.moves.filter(move =>
+        move && [move.from, move.to].every(keys => Array.isArray(keys) && keys.length && keys.every(isDayKey))
+      ) : [];
+      restoreSchedule();
+    }
+  }
+  function scheduleState() {
+    return {
+      days: [...selected].sort(), limit, carryover, approved: approved && [...approved], moves
+    };
   }
   function save() {
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify({
-        days: [...selected].sort(), limit, carryover, approved: approved && [...approved], moves
-      }));
-    } catch (e) {}
+    try { localStorage.setItem(STORE_KEY, JSON.stringify(scheduleState())); }
+    catch (e) {}
   }
 
   // --- форматирование ---
@@ -1030,6 +1059,62 @@ function periodsOf(selected) {
       navigator.clipboard.writeText(text).then(() => { box.hidden = true; flash("План скопирован в буфер обмена."); }, fallback);
     } catch (e) { fallback(); }
   });
+
+  const downloadDialog = $("downloadDialog");
+  const downloadName = $("downloadName");
+  const downloadError = $("downloadError");
+  $("downloadBtn").addEventListener("click", () => {
+    downloadName.value = "Календарь-отпусков-" + YEAR + ".html";
+    downloadError.textContent = "";
+    downloadName.removeAttribute("aria-invalid");
+    downloadDialog.showModal();
+    downloadName.select();
+  });
+  $("downloadCancel").addEventListener("click", () => downloadDialog.close());
+  downloadName.addEventListener("input", () => {
+    downloadError.textContent = "";
+    downloadName.removeAttribute("aria-invalid");
+  });
+  downloadName.addEventListener("keydown", event => {
+    if (event.key === "Enter" && !event.isComposing) {
+      event.preventDefault();
+      downloadCalendar();
+    }
+  });
+  $("downloadConfirm").addEventListener("click", downloadCalendar);
+
+  function downloadCalendar() {
+    const name = downloadName.value.trim().replace(/\.html?$/i, "").trim();
+    let error = "";
+    if (!name || /[<>:"/\\|?*\x00-\x1f]/.test(name) || name.endsWith(".") ||
+        /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) {
+      error = "Укажите допустимое имя файла.";
+    } else if (name.toLowerCase() === "index") {
+      error = "Выберите имя, отличное от index.html.";
+    }
+    if (error) {
+      downloadError.textContent = error;
+      downloadName.setAttribute("aria-invalid", "true");
+      downloadName.focus();
+      return;
+    }
+    // У каждой выгрузки своё хранилище для дальнейших правок в браузере.
+    const id = Array.from(crypto.getRandomValues(new Uint8Array(16)), byte =>
+      byte.toString(16).padStart(2, "0")
+    ).join("");
+    const json = JSON.stringify({ id, state: scheduleState() }).replace(/</g, "\\u003c");
+    exportTemplate.querySelector("#scheduleSnapshot").textContent = json;
+    const file = new Blob(["<!doctype html>\n", exportTemplate.outerHTML], { type: "text/html;charset=utf-8" });
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = name + ".html";
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30_000);
+    downloadDialog.close();
+  }
 
   load();
   render();
